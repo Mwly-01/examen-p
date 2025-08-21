@@ -1,5 +1,9 @@
 # (4H) Gestión De Inventario Para Una Tienda De Tecnología
 
+## Link del repo
+
+https://github.com/Mwly-01/postgres.git
+
 ## Descripción del examen
 
 # **🏪 Gestión de Inventario para una Tienda de Tecnología**
