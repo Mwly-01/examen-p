@@ -9,60 +9,76 @@ CREATE DATABASE examen;
 
 DROP TABLE productos;
 
- CREATE TABLE "productos"(
-    "id" VARCHAR(255) NOT NULL,
-    "nombre" VARCHAR(255) NOT NULL,
-    "categoria" VARCHAR(255) NOT NULL,
-    "precio" NUMERIC(16, 2) NOT NULL,
-    "stock_disponible" INT NOT NULL,
-    "provedor" VARCHAR(255) NOT NULL
+CREATE TABLE clientes (
+    id                 VARCHAR(20)  PRIMARY KEY,
+    nombre             VARCHAR(40)  NOT NULL,
+    apellidos          VARCHAR(100) NOT NULL,
+    celular            NUMERIC(10,0),
+    direccion          VARCHAR(80),
+    correo_electronico VARCHAR(70)
 );
-ALTER TABLE
-    "productos" ADD PRIMARY KEY("id");
-
-CREATE TABLE "cliente"(
-    "id_cliente" VARCHAR(255) NOT NULL,
-    "nombre" VARCHAR(255) NOT NULL,
-    "correo" VARCHAR(255) NOT NULL,
-    "numero_telefono" NUMERIC(10,0) 
+CREATE TABLE examen.categorias (
+    id_categoria  INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    descripcion   VARCHAR(45) NOT NULL,
+    estado        SMALLINT     NOT NULL DEFAULT 1,
+    CONSTRAINT categorias_estado_chk CHECK (estado IN (0,1))
 );
-ALTER TABLE
-    "cliente" ADD PRIMARY KEY("id_cliente");
-
-CREATE TABLE "ventas"(
-    "id_ventas" VARCHAR(255) NOT NULL,
-    "vendido" BIGINT NOT NULL,
-    "id_cliente" BIGINT NOT NULL
+CREATE TABLE examen.productos (
+    id_producto    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre         VARCHAR(45)   NOT NULL,
+    id_categoria   INT           NOT NULL,
+    codigo_barras  VARCHAR(150),
+    precio_venta   NUMERIC(16,2) NOT NULL,
+    cantidad_stock INT           NOT NULL DEFAULT 0,
+    estado         SMALLINT      NOT NULL DEFAULT 1,
+    CONSTRAINT productos_precio_chk   CHECK (precio_venta >= 0),
+    CONSTRAINT productos_stock_chk    CHECK (cantidad_stock >= 0),
+    CONSTRAINT productos_estado_chk   CHECK (estado IN (0,1)),
+    CONSTRAINT productos_fk_categoria FOREIGN KEY (id_categoria)
+        REFERENCES examen.categorias(id_categoria)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
 );
-ALTER TABLE
-    "ventas" ADD PRIMARY KEY("id_ventas");
+CREATE UNIQUE INDEX IF NOT EXISTS ux_productos_codigo_barras
+    ON examen.productos (codigo_barras)
+    WHERE codigo_barras IS NOT NULL;
 
-ALTER TABLE "ventas" ADD CONSTRAINT "id_del_cliente" FOREIGN KEY ("id_cliente") REFERENCES "cliente"("id_cliente") ON UPDATE ON DELETE CASCADE;
-
-CREATE TABLE "provedor"(
-    "id_provedor" VARCHAR(255) NOT NULL,
-    "nombre" VARCHAR(255) NOT NULL,
-    "correo" VARCHAR(255) NOT NULL
+CREATE INDEX IF NOT EXISTS idx_productos_id_categoria
+    ON examen.productos (id_categoria);
+CREATE TABLE examen.compras (
+    id_compra    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_cliente   VARCHAR(20)  NOT NULL,
+    fecha        TIMESTAMP    NOT NULL DEFAULT NOW(),
+    medio_pago   CHAR(1)      NOT NULL,
+    comentario   VARCHAR(300),
+    estado       CHAR(1)      NOT NULL,
+    CONSTRAINT compras_fk_cliente FOREIGN KEY (id_cliente)
+        REFERENCES examen.clientes(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
 );
-ALTER TABLE
-    "provedor" ADD PRIMARY KEY("id_provedor");
+CREATE INDEX IF NOT EXISTS idx_compras_id_cliente
+    ON examen.compras (id_cliente);
 
-INSERT INTO "productos" (nombre, categoria, precio, stock_disponible, provedor) VALUES
-('Camila',   'laptops'   500000, 8, ),
-('Andrés',   'teléfonos'  80000, 4, ),
-('Valeria',  'laptops'   90000,  8,),
-('Juan',     'teléfonos' 400000, ),
-('Luisa',    'portatil'  900000,  ),
-('Carlos',   'laptops'   1800000, 14, ),
-('Diana',    'teléfonos' 2800000,  65, ),
-('Miguel',   'portatil'  8800000,   20,);
+CREATE TABLE examen.compras_productos (
+    id_compra    INT           NOT NULL,
+    id_producto  INT           NOT NULL,
+    cantidad     INT           NOT NULL,
+    total        NUMERIC(16,2) NOT NULL,
+    estado       SMALLINT      NOT NULL DEFAULT 1,
+    CONSTRAINT compras_productos_pk PRIMARY KEY (id_compra, id_producto),
+    CONSTRAINT compras_productos_cantidad_chk CHECK (cantidad > 0),
+    CONSTRAINT compras_productos_total_chk    CHECK (total >= 0),
+    CONSTRAINT compras_productos_estado_chk   CHECK (estado IN (0,1)),
+    CONSTRAINT compras_productos_fk_compra FOREIGN KEY (id_compra)
+        REFERENCES examen.compras(id_compra)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT compras_productos_fk_producto FOREIGN KEY (id_producto)
+        REFERENCES examen.productos(id_producto)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+);
+CREATE INDEX IF NOT EXISTS idx_cp_id_producto
+    ON examen.compras_productos (id_producto);
 
-INSERT INTO "cliente" (nombre, correo, numero_telefono) VALUES
-('Camila',   'camila@gmail.com',  3153245165  ),
-('Andrés',   'andres@gmail.com',  3183179090),
-('Valeria',  'valeria@gmail.com',   3201547854),
-('Juan',     'juan@gmail.com',  3254185445),
-('Luisa',    'luisa@gmail.com',  3652147894),
-('Carlos',   'carlos@gmail.com',   3541245789),
-('Diana',    'diana@gmail.com', 3215421587),
-('Miguel',   'miguel@gmail.com', 3562140845);
