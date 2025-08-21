@@ -1,7 +1,11 @@
 DROP SCHEMA IF EXISTS examen CASCADE;
+/l
+
 CREATE SCHEMA IF NOT EXISTS examen;
 SET search_path TO examen;
 
+
+/c examen
 
 DROP TABLE productos;
 
